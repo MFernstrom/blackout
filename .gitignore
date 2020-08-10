@@ -1,4 +1,6 @@
+backup
 src/bin
 src/lib
 src/backup
 src/processes.dat
+src/*.lps
