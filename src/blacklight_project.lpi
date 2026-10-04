@@ -14,14 +14,15 @@
       <UseXPManifest Value="True"/>
       <XPManifest>
         <DpiAware Value="True"/>
-        <TextName Value="MarcusFernstrom.Blackout.App"/>
-        <TextDesc Value="Darkens displays when running specified applications"/>
+        <TextName Value="MarcusFernstrom.Blackout"/>
+        <TextDesc Value="Blacks out selected monitors when gaming"/>
       </XPManifest>
       <Icon Value="0"/>
     </General>
     <VersionInfo>
       <UseVersionInfo Value="True"/>
       <MajorVersionNr Value="1"/>
+      <MinorVersionNr Value="1"/>
     </VersionInfo>
     <BuildModes Count="2">
       <Item1 Name="Debug" Default="True"/>

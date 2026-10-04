@@ -2,7 +2,7 @@
 
 Multi-monitor gaming utility - Blanks out chosen displays when games you choose runs
 
-<img src="Screenshot w arrows.png" />
+<img src="Screenshot 1.1.0 w arrows.png" />
 
 ## How to use
 1. Click Add
