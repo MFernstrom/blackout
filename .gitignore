@@ -1,6 +1,6 @@
-backup
-src/bin
-src/lib
-src/backup
-src/processes.dat
-src/*.lps
+backup/
+bin/
+lib/
+backup/
+processes.dat
+*.lps

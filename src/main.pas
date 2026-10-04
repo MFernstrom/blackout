@@ -4,12 +4,29 @@
    |    |  _/  | \__  \ _/ ___\|  |/ /  _ \|  |  \   __\
    |    |   \  |__/ __ \\  \___|    <  <_> )  |  /|  |
    |______  /____(____  /\___  >__|_ \____/|____/ |__|
-          \/          \/     \/     \/ v. 1.0.0
+          \/          \/     \/     \/ v. 1.1.0
 
-   License    Apache 2.0
-   Author     Marcus Fernstrom
-   Version    1.0.0
-   About      Blacks out selected monitors while chosen programs are running
+   License      Apache 2.0
+   Author       Marcus Fernstrom
+   Version      1.1.0
+   About        Blacks out selected monitors while chosen programs are running.
+                Useful when gaming to get rid of distractions and light when running multi-monitor setups
+                but only using one or some for playing games.
+
+   Changelog
+                1.1.0 (October 2026)
+                Updated timer logic.
+                No longer needs to run as admin
+                Added options for starting the app minimized and monitor on start
+                Changed background color for identifying monitor + sizing to be a bit neater
+                Switched file storage location to use appdata directory for config and game list
+                Click the Blackout triple monitor logo to open the directory
+                Starts centered on the main desktop/monitor (instead of where I had it when compiling)
+                Fixed some sizing bugs where buttons wouldn't stay where they should
+
+                1.0.0 (August 2020)
+                Original release
+
 }
 unit main;
 
@@ -19,7 +36,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Buttons, StdCtrls,
-  ExtCtrls, Menus, JwaTlHelp32, Windows, lclintf;
+  ExtCtrls, Menus, JwaTlHelp32, Windows, lclintf, IniFiles;
 
 type
 
@@ -50,8 +67,10 @@ type
   { TMainForm }
 
   TMainForm = class(TForm)
-    BitBtn1: TBitBtn;
-    BitBtn2: TBitBtn;
+    StartMonitoringBitBtn: TBitBtn;
+    RemoveGameBitBtn: TBitBtn;
+    MonitorOnStartCheckBox: TCheckBox;
+    StartMinimizedCheckBox: TCheckBox;
     SelectExeButton: TBitBtn;
     DockedMenu: TPopupMenu;
     Image1: TImage;
@@ -59,11 +78,11 @@ type
     PatronImage: TImage;
     QuitMenuItem: TMenuItem;
     OpenMenuItem: TMenuItem;
-    Shape2: TShape;
+    BlueBackgroundShape: TShape;
     GameSettingsBackdrop: TShape;
     ToggleMenuItem: TMenuItem;
     SaveGameSettingsButton: TBitBtn;
-    BitBtn5: TBitBtn;
+    AddNewGameBitBtn: TBitBtn;
     IdentifyMonitorsButton: TBitBtn;
     Monitor1Checkbox: TCheckBox;
     Monitor2Checkbox: TCheckBox;
@@ -74,11 +93,14 @@ type
     OpenDialog1: TOpenDialog;
     TrackedProcessesListBox: TListBox;
     Shape1: TShape;
-    Timer1: TTimer;
+    MainTimer: TTimer;
     MonitorIdentifyTimer: TTimer;
     TrayIcon1: TTrayIcon;
-    procedure BitBtn1Click(Sender: TObject);
-    procedure BitBtn2Click(Sender: TObject);
+    procedure FormShow(Sender: TObject);
+    procedure LogoImageClick(Sender: TObject);
+    procedure StartMonitoringBitBtnClick(Sender: TObject);
+    procedure RemoveGameBitBtnClick(Sender: TObject);
+    procedure MonitorOnStartCheckBoxChange(Sender: TObject);
     procedure SelectExeButtonClick(Sender: TObject);
     procedure IdentifyMonitorsButtonClick(Sender: TObject);
     procedure FormWindowStateChange(Sender: TObject);
@@ -88,22 +110,23 @@ type
     procedure OpenMenuItemClick(Sender: TObject);
     procedure QuitMenuItemClick(Sender: TObject);
     procedure SaveGameSettingsButtonClick(Sender: TObject);
-    procedure BitBtn5Click(Sender: TObject);
+    procedure AddNewGameBitBtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
-    procedure Timer1Timer(Sender: TObject);
+    procedure StartMinimizedCheckBoxChange(Sender: TObject);
+    procedure MainTimerTimer(Sender: TObject);
     procedure SaveData;
     procedure LoadData;
     procedure ShowGameSettings;
-    function GetExeStringFromProcID(PID: DWORD): string;
     procedure ToggleMenuItemClick(Sender: TObject);
     procedure TrackedProcessesListBoxSelectionChange(Sender: TObject);
     procedure runBlackout(gameSetting: TGameSetting);
     procedure hideBlackout;
     procedure toggleMonitoring;
     procedure DisableGameSettingsBox;
+    procedure RunOnStartSettingsCheck;
   private
-
+    HasRunInitialSizeCheck: Boolean;
   public
 
   end;
@@ -115,7 +138,7 @@ var
   processList: TStringList;
 
 const
-  version = '1.0.0';
+  version = '1.1.0';
 
 implementation
 
@@ -126,7 +149,8 @@ implementation
 procedure TBlackoutForm.ShowSmall;
 begin
   Height := 150;
-  Width := 350;
+  Width := 300;
+  Color := $00F5A542;
   Identifier.Show;
   Show;
 end;
@@ -203,12 +227,26 @@ end;
 
 { TMainForm }
 
-procedure TMainForm.BitBtn1Click(Sender: TObject);
+procedure TMainForm.StartMonitoringBitBtnClick(Sender: TObject);
 begin
   toggleMonitoring;
 end;
 
-procedure TMainForm.BitBtn2Click(Sender: TObject);
+procedure TMainForm.FormShow(Sender: TObject);
+begin
+  // We only want to run this once, when the application is started
+  if HasRunInitialSizeCheck = false then begin
+    HasRunInitialSizeCheck := true;
+    RunOnStartSettingsCheck;
+  end;
+end;
+
+procedure TMainForm.LogoImageClick(Sender: TObject);
+begin
+  ExecuteProcess('explorer.exe', GetAppConfigDir(false), []);
+end;
+
+procedure TMainForm.RemoveGameBitBtnClick(Sender: TObject);
 var
   Reply, BoxStyle: integer;
 begin
@@ -220,6 +258,18 @@ begin
     TrackedProcessesListBox.Items.Delete(TrackedProcessesListBox.ItemIndex);
     SaveData;
     DisableGameSettingsBox;
+  end;
+end;
+
+procedure TMainForm.MonitorOnStartCheckBoxChange(Sender: TObject);
+var
+  ini: TIniFile;
+begin
+  ini := TIniFile.Create(GetAppConfigDir(false) + 'blackout.conf');
+  try
+    ini.WriteBool('settings', 'monitor_on_start', MonitorOnStartCheckBox.Checked);
+  finally
+    ini.Free;
   end;
 end;
 
@@ -300,7 +350,7 @@ begin
   SaveData;
 end;
 
-procedure TMainForm.BitBtn5Click(Sender: TObject);
+procedure TMainForm.AddNewGameBitBtnClick(Sender: TObject);
 var
   tmp: TGameSetting;
 begin
@@ -312,6 +362,8 @@ begin
 end;
 
 procedure TMainForm.FormCreate(Sender: TObject);
+var
+  ini: TIniFile;
 begin
   Caption := Caption + ' ' + version;
 
@@ -332,6 +384,18 @@ begin
   end;
 
   LoadData;
+
+  if DirectoryExists(GetAppConfigDir(false)) = false then
+    CreateDir(GetAppConfigDir(false));
+
+  // Load ini settings
+  ini := TIniFile.Create(GetAppConfigDir(false) + 'blackout.conf');
+  try
+    StartMinimizedCheckBox.Checked := ini.ReadBool('settings', 'start_minimized', false);
+    MonitorOnStartCheckBox.Checked := ini.ReadBool('settings', 'monitor_on_start', false);
+  finally
+    ini.Free;
+  end;
 end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
@@ -339,51 +403,54 @@ begin
   processList.Free;
 end;
 
-procedure TMainForm.Timer1Timer(Sender: TObject);
+procedure TMainForm.StartMinimizedCheckBoxChange(Sender: TObject);
+var
+  ini: TIniFile;
+begin
+  ini := TIniFile.Create(GetAppConfigDir(false) + 'blackout.conf');
+  try
+    ini.WriteBool('settings', 'start_minimized', StartMinimizedCheckBox.Checked);
+  finally
+    ini.Free;
+  end;
+end;
+
+procedure TMainForm.MainTimerTimer(Sender: TObject);
 var
   pa: TProcessEntry32;
-  RetVal: THandle;
-  exename: string;
+  hSnap: THandle;
   gameSettings: TGameSetting;
-  foundGame: boolean;
-  i: integer;
+  foundGame: Boolean;
+  i: Integer;
 begin
-  exename := '';
-  RetVal := CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-  pa.dwSize := sizeof(pa);
-  processList.Clear;
-
-  // Get first process
-  if Process32First(RetVal, pa) then
-    // Add process name to string list
-    exename := GetExeStringFromProcID(pa.th32ProcessID);
-  processList.Add(LowerCase(exename));
-
-  begin
-    // While we have process handle
-    while Process32Next(RetVal, pa) do
-    begin
-      exename := GetExeStringFromProcID(pa.th32ProcessID);
-      if processList[processList.Count - 1] <> exename then
-        processList.Add(LowerCase(exename));
-    end;
-  end;
-
-  // Have the list of processes, compare.
-
   foundGame := False;
-  for i := 0 to TrackedProcessesListBox.Count - 1 do
+
+  hSnap := CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+  if hSnap <> INVALID_HANDLE_VALUE then
   begin
-    gameSettings := TrackedProcessesListBox.Items.Objects[i] as TGameSetting;
-    if processList.IndexOf(gameSettings.exePath) <> -1 then
+    pa.dwSize := SizeOf(pa);
+    if Process32First(hSnap, pa) then
     begin
-      foundGame := True;
-      runBlackout(gameSettings);
-      break;
+      // Walk the process list, matching directly — no string list needed
+      repeat
+        for i := 0 to TrackedProcessesListBox.Count - 1 do
+        begin
+          gameSettings := TrackedProcessesListBox.Items.Objects[i] as TGameSetting;
+          if SameText(pa.szExeFile, ExtractFileName(gameSettings.exePath)) then
+          begin
+            foundGame := True;
+            Break;
+          end;
+        end;
+        if foundGame then
+          runBlackout(gameSettings);
+
+      until foundGame or not Process32Next(hSnap, pa);
     end;
+    CloseHandle(hSnap);
   end;
 
-  if foundGame = False then
+  if not foundGame then
     hideBlackout;
 end;
 
@@ -401,7 +468,7 @@ begin
       fileTs.Add(GameSettings.getSerializedString);
     end;
 
-    fileTs.SaveToFile('processes.dat');
+    fileTs.SaveToFile(GetAppConfigDir(false) + 'processes.dat');
   finally
     fileTs.Free;
   end;
@@ -413,10 +480,10 @@ var
   fileTs: TStringList;
   i: integer;
 begin
-  if FileExists('processes.dat') = True then
+  if FileExists(GetAppConfigDir(false) + 'processes.dat') = True then
   begin
     fileTs := TStringList.Create;
-    fileTs.LoadFromFile('processes.dat');
+    fileTs.LoadFromFile(GetAppConfigDir(false) + 'processes.dat');
 
     try
       for i := 0 to fileTs.Count - 1 do
@@ -457,35 +524,6 @@ begin
   end;
 end;
 
-function TMainForm.GetExeStringFromProcID(PID: DWORD): string;
-var
-  hModuleSnap: THandle;
-  me: TModuleEntry32;
-begin
-  Result := '';
-  hModuleSnap := CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, PID);
-  if hModuleSnap <> INVALID_HANDLE_VALUE then
-  begin
-    me.dwSize := SizeOf(TModuleEntry32);
-    if Module32First(hModuleSnap, me) then
-    begin
-      if lowercase(ExtractFileExt(me.szExePath)) = '.exe' then
-      begin
-        Result := me.szExePath;
-        CloseHandle(hModuleSnap);
-        exit;
-      end;
-      while Module32Next(hModuleSnap, me) do
-        if lowercase(ExtractFileExt(me.szExePath)) = '.exe' then
-        begin
-          Result := me.szExePath;
-          break;
-        end;
-    end;
-    CloseHandle(hModuleSnap);
-  end;
-end;
-
 procedure TMainForm.ToggleMenuItemClick(Sender: TObject);
 begin
   toggleMonitoring;
@@ -498,34 +536,37 @@ end;
 
 procedure TMainForm.runBlackout(gameSetting: TGameSetting);
 begin
-  if gameSetting.monitor1 = True then
+  if (gameSetting.monitor1 = True) AND (Blackout1 <> NIL) then
     Blackout1.ShowFull;
-  if gameSetting.monitor2 = True then
+  if (gameSetting.monitor2 = True) AND (Blackout2 <> NIL) then
     Blackout2.ShowFull;
-  if gameSetting.monitor3 = True then
+  if (gameSetting.monitor3 = True) AND (Blackout3 <> NIL) then
     Blackout3.ShowFull;
 end;
 
 procedure TMainForm.hideBlackout;
 begin
-  Blackout1.DoHideForm;
-  Blackout2.DoHideForm;
-  Blackout3.DoHideForm;
+  if Blackout1 <> NIL then
+    Blackout1.DoHideForm;
+  if Blackout2 <> NIL then
+    Blackout2.DoHideForm;
+  if Blackout3 <> NIL then
+    Blackout3.DoHideForm;
 end;
 
 procedure TMainForm.toggleMonitoring;
 begin
-  if Timer1.Enabled = False then
+  if MainTimer.Enabled = False then
   begin
-    BitBtn1.Caption := 'Stop monitoring';
+    StartMonitoringBitBtn.Caption := 'Stop monitoring';
     ToggleMenuItem.Caption := 'Stop monitoring';
-    Timer1.Enabled := True;
+    MainTimer.Enabled := True;
   end
   else
   begin
-    BitBtn1.Caption := 'Start monitoring';
+    StartMonitoringBitBtn.Caption := 'Start monitoring';
     ToggleMenuItem.Caption := 'Start monitoring';
-    Timer1.Enabled := False;
+    MainTimer.Enabled := False;
   end;
 end;
 
@@ -536,6 +577,15 @@ begin
   Monitor2Checkbox.Checked := False;
   Monitor3Checkbox.Checked := False;
   GameSettingsGroupBox.Enabled := False;
+end;
+
+procedure TMainForm.RunOnStartSettingsCheck;
+begin
+  if MonitorOnStartCheckBox.Checked then
+    StartMonitoringBitBtn.Click;
+
+  if StartMinimizedCheckBox.Checked then
+    PostMessage(Handle, WM_SYSCOMMAND, SC_MINIMIZE, 0);
 end;
 
 end.
