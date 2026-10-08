@@ -14,6 +14,10 @@
                 but only using one or some for playing games.
 
    Changelog
+                1.1.1 (October 2026)
+                Fixed issue where using Identify Monitor would set the panel background of both the identifier and fullscreen modes.
+                Added UniqueInstance so you can't accidentally run multiple instances as there's no gain whatsoever to doing so.
+
                 1.1.0 (October 2026)
                 Updated timer logic.
                 No longer needs to run as admin
@@ -139,7 +143,7 @@ var
   processList: TStringList;
 
 const
-  version = '1.1.0';
+  version = '1.1.1';
 
 implementation
 
