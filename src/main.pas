@@ -36,7 +36,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Buttons, StdCtrls,
-  ExtCtrls, Menus, JwaTlHelp32, Windows, lclintf, IniFiles;
+  ExtCtrls, Menus, JwaTlHelp32, Windows, lclintf, UniqueInstance, IniFiles;
 
 type
 
@@ -96,6 +96,7 @@ type
     MainTimer: TTimer;
     MonitorIdentifyTimer: TTimer;
     TrayIcon1: TTrayIcon;
+    UniqueInstance1: TUniqueInstance;
     procedure FormShow(Sender: TObject);
     procedure LogoImageClick(Sender: TObject);
     procedure StartMonitoringBitBtnClick(Sender: TObject);
@@ -160,6 +161,7 @@ begin
   if FIsActive = False then
   begin
     FIsActive := True;
+    Color := clBlack;
     Identifier.Hide;
     Show;
   end;

@@ -1805,6 +1805,12 @@ object MainForm: TMainForm
     }
     Visible = True
     Left = 368
-    Top = 224
+    Top = 231
+  end
+  object UniqueInstance1: TUniqueInstance
+    Enabled = True
+    Identifier = 'blackout'
+    Left = 696
+    Top = 231
   end
 end
