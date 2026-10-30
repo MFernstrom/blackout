@@ -1465,6 +1465,7 @@ object MainForm: TMainForm
     Enabled = False
     Interval = 5000
     OnTimer = MainTimerTimer
+    OnStopTimer = MainTimerStopTimer
     Left = 280
     Top = 231
   end

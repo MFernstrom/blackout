@@ -4,7 +4,7 @@
    |    |  _/  | \__  \ _/ ___\|  |/ /  _ \|  |  \   __\
    |    |   \  |__/ __ \\  \___|    <  <_> )  |  /|  |
    |______  /____(____  /\___  >__|_ \____/|____/ |__|
-          \/          \/     \/     \/ v. 1.1.0
+          \/          \/     \/     \/ v. 1.1.2
 
    License      Apache 2.0
    Author       Marcus Fernstrom
@@ -14,6 +14,9 @@
                 but only using one or some for playing games.
 
    Changelog
+                1.1.2 (October 2026)
+                Fixed bug where blacked out panels were still visible after clicking "Stop monitoring"
+
                 1.1.1 (October 2026)
                 Fixed issue where using Identify Monitor would set the panel background of both the identifier and fullscreen modes.
                 Added UniqueInstance so you can't accidentally run multiple instances as there's no gain whatsoever to doing so.
@@ -103,6 +106,7 @@ type
     UniqueInstance1: TUniqueInstance;
     procedure FormShow(Sender: TObject);
     procedure LogoImageClick(Sender: TObject);
+    procedure MainTimerStopTimer(Sender: TObject);
     procedure StartMonitoringBitBtnClick(Sender: TObject);
     procedure RemoveGameBitBtnClick(Sender: TObject);
     procedure MonitorOnStartCheckBoxChange(Sender: TObject);
@@ -143,7 +147,7 @@ var
   processList: TStringList;
 
 const
-  version = '1.1.1';
+  version = '1.1.2';
 
 implementation
 
@@ -250,6 +254,12 @@ end;
 procedure TMainForm.LogoImageClick(Sender: TObject);
 begin
   ExecuteProcess('explorer.exe', GetAppConfigDir(false), []);
+end;
+
+procedure TMainForm.MainTimerStopTimer(Sender: TObject);
+begin
+  // Make sure we hide any blackout panels
+  hideBlackout;
 end;
 
 procedure TMainForm.RemoveGameBitBtnClick(Sender: TObject);
