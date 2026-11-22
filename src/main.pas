@@ -43,7 +43,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Buttons, StdCtrls,
-  ExtCtrls, Menus, JwaTlHelp32, Windows, lclintf, UniqueInstance, IniFiles;
+  ExtCtrls, Menus, JwaTlHelp32, Windows, lclintf, UniqueInstance, IniFiles, LCLType;
 
 type
 
@@ -69,6 +69,8 @@ type
     procedure DoHideForm;
     procedure SetupForm(TheMonitor: TMonitor; id: string);
     property Identifier: TLabel read FIdentifier write FIdentifier;
+  protected
+    procedure CreateParams(var Params: TCreateParams); override;
   end;
 
   { TMainForm }
@@ -202,6 +204,12 @@ begin
   FIdentifier.Font.Color := clWhite;
   FIdentifier.Font.Size := 40;
   FIdentifier.Parent := Self;
+end;
+
+procedure TBlackoutForm.CreateParams(var Params: TCreateParams);
+begin
+  inherited CreateParams(Params);
+  Params.ExStyle := Params.ExStyle or WS_EX_NOACTIVATE;
 end;
 
 { TGameSetting }
