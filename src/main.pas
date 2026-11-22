@@ -14,6 +14,10 @@
                 but only using one or some for playing games.
 
    Changelog
+                1.1.3 (November 2026)
+                Small update to blackout form creation, they should no longer take focus when .show is used, so won't interfere
+                loading games.
+
                 1.1.2 (October 2026)
                 Fixed bug where blacked out panels were still visible after clicking "Stop monitoring"
 
@@ -149,7 +153,7 @@ var
   processList: TStringList;
 
 const
-  version = '1.1.2';
+  version = '1.1.3';
 
 implementation
 
